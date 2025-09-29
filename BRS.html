@@ -173,7 +173,7 @@
                 </div>
                 <div>
                     <label for="tradDays">Traditional Deployment (days)</label>
-                    <input id="tradDays" type="number" min="0" step="1" value="3" />
+                    <input id="tradDays" type="number" min="0" step="1" value="2" />
                     <div class="hint">Klasik entegrasyon süresi (gün)</div>
                 </div>
                 <div>
@@ -188,12 +188,12 @@
                 </div>
                 <div>
                     <label for="msgPriceMarket">Baggage Message Price - Market ($/bag)</label>
-                    <input id="msgPriceMarket" type="number" min="0" step="0.01" value="0.14" />
+                    <input id="msgPriceMarket" type="number" min="0" step="0.0001" value="0.004" />
                     <div class="hint">Piyasa ortalaması (14¢)</div>
                 </div>
                 <div>
                     <label for="msgPriceTav">Baggage Message Price - TAV ($/bag)</label>
-                    <input id="msgPriceTav" type="number" min="0" step="0.01" value="0.07" />
+                    <input id="msgPriceTav" type="number" min="0" step="0.0001" value="0" />
                     <div class="hint">TAV fiyatı (7¢)</div>
                 </div>
             </div>
@@ -280,11 +280,11 @@
                     capexAl: 7000,
                     opexFactor: 2.5,
                     hourlyRate: 60,
-                    tradDays: 3,
+                    tradDays: 2,
                     tavDays: 1,
                     carbonPerDedicated: 8,
-                    msgPriceMarket: 0.14,
-                    msgPriceTav: 0.07
+                    msgPriceMarket: 0.004,
+                    msgPriceTav: 0
                 };
                 for (const [id, val] of Object.entries(defaults)) {
                     el(id).value = String(val);
