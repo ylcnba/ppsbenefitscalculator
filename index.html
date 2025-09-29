@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benefits Calculators</title>
+    <style>
+        :root { --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#06b6d4; }
+        html, body { height:100%; }
+        body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial; background:linear-gradient(120deg, #0b1024, #0a142e 35%, #0b2433); color:var(--text); display:flex; align-items:center; justify-content:center; }
+        .wrap { width:100%; max-width:980px; padding:32px 16px; }
+        h1 { margin:0 0 18px 0; font-size:28px; letter-spacing:0.2px; }
+        p { margin:0 0 24px 0; color:var(--muted); }
+        .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+        @media (max-width: 800px) { .grid { grid-template-columns:1fr; } }
+        .card { background:rgba(17,24,39,0.85); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:18px; text-decoration:none; color:var(--text); transition:transform .15s ease, box-shadow .15s ease; box-shadow:0 10px 30px rgba(0,0,0,0.35); }
+        .card:hover { transform:translateY(-2px); box-shadow:0 14px 34px rgba(0,0,0,0.45); }
+        .title { font-weight:700; font-size:18px; margin-bottom:6px; color:#cfe7ff; }
+        .desc { color:var(--muted); font-size:13px; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <main class="wrap">
+        <h1>Benefits Calculators</h1>
+        <p>Choose a product to estimate CAPEX/OPEX savings, deployment time and sustainability impacts.</p>
+        <div class="grid">
+            <a class="card" href="CUPPS.html">
+                <div class="title">CUPPS</div>
+                <div class="desc">Common-Use Platform benefits calculator</div>
+            </a>
+            <a class="card" href="BRS.html">
+                <div class="title">BRS</div>
+                <div class="desc">Baggage Reconciliation System savings and messaging economics</div>
+            </a>
+            <a class="card" href="TDAS.html">
+                <div class="title">TDAS</div>
+                <div class="desc">Travel Document Authorization System (coming soon)</div>
+            </a>
+        </div>
+    </main>
+</body>
+</html>
+
+
