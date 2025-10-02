@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRS Resource Calculator</title>
+    <style>
+        :root { --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#06b6d4; --ok:#22c55e; --warn:#f59e0b; }
+        html, body { height:100%; }
+        body { margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:linear-gradient(120deg, #0b1024, #0a142e 35%, #0b2433); color:var(--text); }
+        .wrap { max-width:1080px; margin:32px auto; padding:0 16px; }
+        header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+        h1 { font-size:24px; margin:0; letter-spacing:0.2px; }
+        .product { color:var(--accent); font-weight:600; }
+        .grid { display:grid; grid-template-columns:repeat(12, 1fr); gap:16px; }
+        .card { background:rgba(17,24,39,0.85); border:1px solid rgba(255,255,255,0.06); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.35); }
+        .card header { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+        .card header h2 { font-size:15px; margin:0; color:#cbd5e1; letter-spacing:0.2px; }
+        .card .body { padding:16px; }
+        .span-12 { grid-column:span 12; }
+        .span-6 { grid-column:span 6; }
+        @media (max-width: 900px) { .span-6 { grid-column:span 12; } }
+
+        label { display:block; font-size:12px; color:var(--muted); margin-bottom:8px; }
+        .row { display:flex; gap:12px; flex-wrap:wrap; }
+        .field { flex:1 1 220px; }
+        input[type="number"] { width:100%; box-sizing:border-box; background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; outline:none; transition:border-color .15s ease, box-shadow .15s ease; }
+        input[type="number"]:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(6,182,212,0.2); }
+        .hint { font-size:11px; color:var(--muted); margin-top:6px; }
+
+        .btns { display:flex; gap:8px; }
+        button { background:linear-gradient(180deg, #0ea5b7, #0891b2); color:white; border:none; border-radius:10px; padding:10px 12px; font-weight:600; cursor:pointer; }
+        button.secondary { background:#1f2937; border:1px solid rgba(255,255,255,0.08); }
+        a { color:var(--accent); text-decoration:none; }
+
+        .kpis { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 12px 0; }
+        .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:9999px; background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.25); color:#e6fbff; font-size:12px; }
+
+        table { width:100%; border-collapse:separate; border-spacing:0; }
+        th, td { text-align:left; padding:10px 12px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+        thead th { position:sticky; top:0; background:#0f1626; color:#cbd5e1; border-bottom:1px solid rgba(255,255,255,0.06); z-index:1; }
+        tbody tr:not(:last-child) td { border-bottom:1px dashed rgba(255,255,255,0.06); }
+        .svc { color:#cfe7ff; font-weight:600; }
+        .num { text-align:right; }
+        .delta-pos { color:var(--ok); font-weight:700; }
+        .delta-neg { color:#60a5fa; font-weight:700; }
+        .note { font-size:12px; color:#a3b2c7; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div class="wrap">
+        <header>
+            <h1><span class="product">BRS</span> Resource Calculator</h1>
+            <nav class="btns">
+                <button class="secondary" onclick="window.location.href='index.html'">Home</button>
+                <button class="secondary" onclick="window.location.href='BRS.html'">BRS Benefits</button>
+            </nav>
+        </header>
+
+        <div class="kpis" aria-label="Top KPIs">
+            <span class="pill">🛄 Microservice sizing by AIDX / BSM / Users</span>
+            <span class="pill">📈 Interpolated between Current · A · B</span>
+            <span class="pill">🧮 Shows delta vs Current</span>
+        </div>
+
+        <div class="grid">
+            <section class="card span-12" aria-label="Inputs">
+                <header><h2>Inputs</h2></header>
+                <div class="body">
+                    <div class="row">
+                        <div class="field">
+                            <label for="aidx">AIDX (per day)</label>
+                            <input id="aidx" type="number" min="0" step="50" value="1500" />
+                            <div class="hint">Current=1500 · Scenario A=3000 · Scenario B=7500</div>
+                        </div>
+                        <div class="field">
+                            <label for="bsm">BSM (per day)</label>
+                            <input id="bsm" type="number" min="0" step="50" value="2000" />
+                            <div class="hint">Current=2000 · Scenario A=5000 · Scenario B=10000</div>
+                        </div>
+                        <div class="field">
+                            <label for="users">Users (concurrent)</label>
+                            <input id="users" type="number" min="0" step="1" value="20" />
+                            <div class="hint">Current=20 · Scenario A=50 · Scenario B=100</div>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:12px; align-items:center;">
+                        <div class="pill" id="scaleBadge">Scale 1.00× (≈ Current)</div>
+                        <div class="pill" id="rangeBadge">Between Current and A</div>
+                        <div style="flex:1"></div>
+                        <div class="btns">
+                            <button id="resetBtn" class="secondary">Reset</button>
+                            <button id="shareBtn">Share</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card span-12" aria-label="Sizing Table">
+                <header><h2>Recommended Resources</h2></header>
+                <div class="body" style="overflow:auto;">
+                    <table aria-describedby="table of resources">
+                        <thead>
+                            <tr>
+                                <th>Microservice</th>
+                                <th class="num">CPU (mc)</th>
+                                <th class="num">RAM</th>
+                                <th class="num">Δ CPU</th>
+                                <th class="num">Δ RAM</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th class="num" id="totCpu">0</th>
+                                <th class="num" id="totRam">0</th>
+                                <th class="num" id="totCpuDelta">0</th>
+                                <th class="num" id="totRamDelta">0</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="note" style="margin-top:10px;">
+                        Values are interpolated piecewise: Current ↔ Scenario A (×2.5) ↔ Scenario B (×5). Beyond B, linear extrapolation continues with A→B slope.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const el = (id) => document.getElementById(id);
+
+        const LOAD_BASE = { aidx:1500, bsm:2000, users:20 };
+        const SCALE_A = 2.5; // Scenario A roughly 2.5×
+        const SCALE_B = 5;   // Scenario B roughly 5×
+
+        // Resource table (RAM in MB)
+        const RESOURCES = {
+            'flight-consumer':   { cur:{ cpu:  50, ram:  128 }, A:{ cpu: 100, ram:  256 }, B:{ cpu:  250, ram:  640 } },
+            'bim-consumer':      { cur:{ cpu:  50, ram:  128 }, A:{ cpu: 125, ram:  320 }, B:{ cpu:  250, ram:  640 } },
+            'bim-processor':     { cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1500, ram: 8192 }, B:{ cpu: 3000, ram:16384 } },
+            'bag-processor':     { cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1000, ram: 4096 }, B:{ cpu: 2000, ram: 8192 } },
+            'report-manager':    { cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
+            'report-worker':     { cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
+            'api-gateway':       { cur:{ cpu:  50, ram:   64 }, A:{ cpu: 125, ram:  160 }, B:{ cpu:  250, ram:  320 } }
+        };
+
+        function formatRam(mb) {
+            if (mb >= 1024) return (mb/1024).toFixed(mb % 1024 === 0 ? 0 : 1) + ' GB';
+            return Math.round(mb) + ' MB';
+        }
+
+        function readInputs() {
+            const aidx = Math.max(0, Math.floor(Number(el('aidx').value || 0)));
+            const bsm = Math.max(0, Math.floor(Number(el('bsm').value || 0)));
+            const users = Math.max(0, Math.floor(Number(el('users').value || 0)));
+            return { aidx, bsm, users };
+        }
+
+        function computeScale(v) {
+            const fAidx = (v.aidx || 0) / LOAD_BASE.aidx;
+            const fBsm = (v.bsm || 0) / LOAD_BASE.bsm;
+            const fUsers = (v.users || 0) / LOAD_BASE.users;
+            const s = Math.max(fAidx || 0, fBsm || 0, fUsers || 0) || 0;
+            return Math.max(0, s);
+        }
+
+        function interp3(p0, pA, pB, s) {
+            if (s <= 0) return 0;
+            if (s < 1) return p0 * s; // simple proportional scale below Current
+            if (s <= SCALE_A) {
+                const t = (s - 1) / (SCALE_A - 1);
+                return p0 + (pA - p0) * t;
+            }
+            if (s <= SCALE_B) {
+                const t = (s - SCALE_A) / (SCALE_B - SCALE_A);
+                return pA + (pB - pA) * t;
+            }
+            // extrapolate beyond B using A->B slope
+            const slope = (pB - pA) / (SCALE_B - SCALE_A);
+            return pB + slope * (s - SCALE_B);
+        }
+
+        function recompute() {
+            const v = readInputs();
+            const s = computeScale(v);
+
+            el('scaleBadge').textContent = `Scale ${s.toFixed(2)}× (${s < 1.05 ? '\u2248 Current' : s <= SCALE_A ? 'Current→A' : s <= SCALE_B ? 'A→B' : '> B'})`;
+            el('rangeBadge').textContent = s <= 1 ? 'Below Current' : s <= SCALE_A ? 'Between Current and A' : s <= SCALE_B ? 'Between A and B' : 'Beyond B';
+
+            let totCpu = 0, totRam = 0, totCpuCur = 0, totRamCur = 0;
+            const tbody = el('tbody');
+            tbody.innerHTML = '';
+            Object.entries(RESOURCES).forEach(([name, r]) => {
+                const recCpu = Math.max(0, Math.round(interp3(r.cur.cpu, r.A.cpu, r.B.cpu, s)));
+                const recRam = Math.max(0, Math.round(interp3(r.cur.ram, r.A.ram, r.B.ram, s)));
+                totCpu += recCpu; totRam += recRam; totCpuCur += r.cur.cpu; totRamCur += r.cur.ram;
+
+                const cpuDelta = recCpu - r.cur.cpu;
+                const ramDelta = recRam - r.cur.ram;
+                const deltaCpuStr = (cpuDelta >= 0 ? '+' : '') + cpuDelta;
+                const deltaRamStr = (ramDelta >= 0 ? '+' : '') + (ramDelta >= 1024 || ramDelta <= -1024 ? (ramDelta/1024).toFixed(1) + ' GB' : Math.round(ramDelta) + ' MB');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="svc">${name}</td>
+                    <td class="num">${recCpu.toLocaleString('en-US')}</td>
+                    <td class="num">${formatRam(recRam)}</td>
+                    <td class="num ${cpuDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaCpuStr}</td>
+                    <td class="num ${ramDelta >= 0 ? 'delta-pos' : 'delta-neg'}">${deltaRamStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            el('totCpu').textContent = totCpu.toLocaleString('en-US');
+            el('totRam').textContent = formatRam(totRam);
+            const dCpu = totCpu - totCpuCur;
+            const dRam = totRam - totRamCur;
+            el('totCpuDelta').textContent = (dCpu >= 0 ? '+' : '') + dCpu.toLocaleString('en-US');
+            el('totRamDelta').textContent = (dRam >= 0 ? '+' : '') + (Math.abs(dRam) >= 1024 ? (dRam/1024).toFixed(1) + ' GB' : Math.round(dRam) + ' MB');
+            el('totCpuDelta').className = 'num ' + (dCpu >= 0 ? 'delta-pos' : 'delta-neg');
+            el('totRamDelta').className = 'num ' + (dRam >= 0 ? 'delta-pos' : 'delta-neg');
+        }
+
+        function attach() {
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(i => i.addEventListener('input', recompute));
+
+            el('resetBtn').addEventListener('click', () => {
+                el('aidx').value = '1500';
+                el('bsm').value = '2000';
+                el('users').value = '20';
+                recompute();
+            });
+
+            el('shareBtn').addEventListener('click', () => {
+                const v = readInputs();
+                const params = new URLSearchParams(v).toString();
+                const url = location.origin + location.pathname + '?' + params;
+                navigator.clipboard.writeText(url).then(() => alert('Scenario URL copied to clipboard.')).catch(() => prompt('Copy this URL:', url));
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            ['aidx','bsm','users'].forEach(id => { if (urlParams.has(id)) el(id).value = urlParams.get(id); });
+        }
+
+        attach();
+        recompute();
+    </script>
+</body>
+<!--
+Scenarios (reference):
+Current: 1500 AIDX / 2000 BSM / 20 users
+Scenario A: 3000 AIDX / 5000 BSM / 50 users (≈2.5×)
+Scenario B: 7500 AIDX / 10000 BSM / 100 users (≈5×)
+-->
+</html>
+
+
