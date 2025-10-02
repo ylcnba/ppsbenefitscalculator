@@ -135,18 +135,19 @@
         const el = (id) => document.getElementById(id);
 
         const LOAD_BASE = { aidx:1500, bsm:2000, users:20 };
-        const SCALE_A = 2.5; // Scenario A roughly 2.5×
-        const SCALE_B = 5;   // Scenario B roughly 5×
+        // Scenario A scales are driver-specific (from provided scenarios)
+        const SCALE_A_BY_DRIVER = { aidx: 2.0, bsm: 2.5, users: 2.5 };
+        const SCALE_B = 5;   // Scenario B = 5× for all drivers
 
         // Resource table (RAM in MB)
         const RESOURCES = {
-            'flight-consumer':   { cur:{ cpu:  50, ram:  128 }, A:{ cpu: 100, ram:  256 }, B:{ cpu:  250, ram:  640 } },
-            'bim-consumer':      { cur:{ cpu:  50, ram:  128 }, A:{ cpu: 125, ram:  320 }, B:{ cpu:  250, ram:  640 } },
-            'bim-processor':     { cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1500, ram: 8192 }, B:{ cpu: 3000, ram:16384 } },
-            'bag-processor':     { cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1000, ram: 4096 }, B:{ cpu: 2000, ram: 8192 } },
-            'report-manager':    { cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
-            'report-worker':     { cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
-            'api-gateway':       { cur:{ cpu:  50, ram:   64 }, A:{ cpu: 125, ram:  160 }, B:{ cpu:  250, ram:  320 } }
+            'flight-consumer':   { driver:'aidx',  cur:{ cpu:  50, ram:  128 }, A:{ cpu: 100, ram:  256 }, B:{ cpu:  250, ram:  640 } },
+            'bim-consumer':      { driver:'bsm',   cur:{ cpu:  50, ram:  128 }, A:{ cpu: 125, ram:  320 }, B:{ cpu:  250, ram:  640 } },
+            'bim-processor':     { driver:'bsm',   cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1500, ram: 8192 }, B:{ cpu: 3000, ram:16384 } },
+            'bag-processor':     { driver:'bsm',   cur:{ cpu: 600, ram: 3072 }, A:{ cpu:1000, ram: 4096 }, B:{ cpu: 2000, ram: 8192 } },
+            'report-manager':    { driver:'users', cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
+            'report-worker':     { driver:'users', cur:{ cpu: 100, ram:  512 }, A:{ cpu: 400, ram: 1024 }, B:{ cpu:  800, ram: 2048 } },
+            'api-gateway':       { driver:'users', cur:{ cpu:  50, ram:   64 }, A:{ cpu: 125, ram:  160 }, B:{ cpu:  250, ram:  320 } }
         };
 
         function formatRam(mb) {
@@ -161,43 +162,45 @@
             return { aidx, bsm, users };
         }
 
-        function computeScale(v) {
-            const fAidx = (v.aidx || 0) / LOAD_BASE.aidx;
-            const fBsm = (v.bsm || 0) / LOAD_BASE.bsm;
-            const fUsers = (v.users || 0) / LOAD_BASE.users;
-            const s = Math.max(fAidx || 0, fBsm || 0, fUsers || 0) || 0;
-            return Math.max(0, s);
+        function computeScales(v) {
+            const sAidx = Math.max(0, (v.aidx || 0) / LOAD_BASE.aidx);
+            const sBsm  = Math.max(0, (v.bsm  || 0) / LOAD_BASE.bsm);
+            const sUser = Math.max(0, (v.users || 0) / LOAD_BASE.users);
+            return { overall: Math.max(sAidx, sBsm, sUser), aidx: sAidx, bsm: sBsm, users: sUser };
         }
 
-        function interp3(p0, pA, pB, s) {
+        function interp3(p0, pA, pB, s, scaleA, scaleB) {
             if (s <= 0) return 0;
             if (s < 1) return p0 * s; // simple proportional scale below Current
-            if (s <= SCALE_A) {
-                const t = (s - 1) / (SCALE_A - 1);
+            if (s <= scaleA) {
+                const t = (s - 1) / (scaleA - 1);
                 return p0 + (pA - p0) * t;
             }
-            if (s <= SCALE_B) {
-                const t = (s - SCALE_A) / (SCALE_B - SCALE_A);
+            if (s <= scaleB) {
+                const t = (s - scaleA) / (scaleB - scaleA);
                 return pA + (pB - pA) * t;
             }
             // extrapolate beyond B using A->B slope
-            const slope = (pB - pA) / (SCALE_B - SCALE_A);
-            return pB + slope * (s - SCALE_B);
+            const slope = (pB - pA) / (scaleB - scaleA);
+            return pB + slope * (s - scaleB);
         }
 
         function recompute() {
             const v = readInputs();
-            const s = computeScale(v);
+            const scales = computeScales(v);
 
-            el('scaleBadge').textContent = `Scale ${s.toFixed(2)}× (${s < 1.05 ? '\u2248 Current' : s <= SCALE_A ? 'Current→A' : s <= SCALE_B ? 'A→B' : '> B'})`;
-            el('rangeBadge').textContent = s <= 1 ? 'Below Current' : s <= SCALE_A ? 'Between Current and A' : s <= SCALE_B ? 'Between A and B' : 'Beyond B';
+            el('scaleBadge').textContent = `Scale ${scales.overall.toFixed(2)}×`;
+            el('rangeBadge').textContent = `AIDX ${scales.aidx.toFixed(2)}× · BSM ${scales.bsm.toFixed(2)}× · Users ${scales.users.toFixed(2)}×`;
 
             let totCpu = 0, totRam = 0, totCpuCur = 0, totRamCur = 0;
             const tbody = el('tbody');
             tbody.innerHTML = '';
             Object.entries(RESOURCES).forEach(([name, r]) => {
-                const recCpu = Math.max(0, Math.round(interp3(r.cur.cpu, r.A.cpu, r.B.cpu, s)));
-                const recRam = Math.max(0, Math.round(interp3(r.cur.ram, r.A.ram, r.B.ram, s)));
+                const driver = r.driver || 'users';
+                const s = scales[driver] ?? scales.overall;
+                const scaleA = SCALE_A_BY_DRIVER[driver] ?? 2.5;
+                const recCpu = Math.max(0, Math.round(interp3(r.cur.cpu, r.A.cpu, r.B.cpu, s, scaleA, SCALE_B)));
+                const recRam = Math.max(0, Math.round(interp3(r.cur.ram, r.A.ram, r.B.ram, s, scaleA, SCALE_B)));
                 totCpu += recCpu; totRam += recRam; totCpuCur += r.cur.cpu; totRamCur += r.cur.ram;
 
                 const cpuDelta = recCpu - r.cur.cpu;
